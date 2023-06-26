@@ -4,6 +4,11 @@ version: "3"
 vars:
   KUBERNETES_DIR: "{{.ROOT_DIR}}/kubernetes"
   ANSIBLE_DIR: "{{.ROOT_DIR}}/ansible"
+  LOCAL_BIN_PATH: "{{.ROOT_DIR}}/venv"
+  python_version: "3.10.7"
+  python_venv_path:
+    sh: if [[ "{{.PYTHON_VENV_PATH}}" == "" ]]; then echo "venv"; else echo "$(dirname {{.LOCAL_BIN_PATH}})"; fi
+  python_bin_path: "{{.python_venv_path}}/bin"
 
 dotenv: [".config.env"]
 
@@ -12,12 +17,19 @@ env:
   SOPS_AGE_KEY_FILE: ~/.config/sops/age/keys.txt
 
 includes:
-  ansible: .taskfiles/AnsibleTasks.yml
-  cluster: .taskfiles/ClusterTasks.yml
-  precommit: .taskfiles/PrecommitTasks.yml
+  ansible: .taskfiles/ansible.yml
+  cluster: .taskfiles/cluster.yml
+  kube: .taskfiles/kube.yml
+  precommit: .taskfiles/precommit.yml
+  sops: .taskfiles/sops.yml
+  install: .taskfiles/install.yml
+  lint: .taskfiles/lint.yml
+  format: .taskfiles/format.yml
+  flux: .taskfiles/flux.yml
+  cloudflared: .taskfiles/cloudflared.yml
 
 tasks:
-  init:
+  init:brew:
     desc: Initialize workstation dependencies with Brew
     cmds:
       - brew install {{.DEPS}} {{.CLI_ARGS}}
@@ -51,9 +63,37 @@ tasks:
   verify:
     desc: Verify env settings
     cmds:
+      - source {{.python_venv_path}}/bin/activate
       - ./configure --verify
 
   configure:
     desc: Configure repository from env settings
     cmds:
       - ./configure
+
+  venv:clean:
+    desc: Remove virtual environment
+    silent: true
+    cmds:
+      - |
+        rm -rf {{.python_venv_path}}
+
+  venv:
+    desc: Create virtual environment
+    silent: true
+    cmds:
+      - |
+        python3 -m venv {{.python_venv_path}}
+        source {{.python_venv_path}}/bin/activate
+        pip3 install pip --upgrade --index-url=https://pypi.org/simple/
+    status:
+      - test -d {{.python_venv_path}}
+
+  venv:install:
+    desc: Install locally
+    silent: true
+    deps: [venv]
+    cmds:
+      - |
+        source {{.python_venv_path}}/bin/activate
+        pip3 install -r requirements.txt

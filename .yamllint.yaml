@@ -1,6 +1,7 @@
 ---
 ignore: |
   *.sops.*
+  .taskfiles/*.yml
 extends: default
 rules:
   truthy:

@@ -7,8 +7,10 @@
         "**/kubernetes/**/*.sops.toml": "plaintext"
     },
     "yaml.schemas": {
+        "https://json.schemastore.org/gitlab-ci.json": ".gitlab-ci.yml",
         "ansible": "ansible/*.yml",
-        "Kubernetes": "kubernetes/*.yaml"
+        "Kubernetes": "kubernetes/*.yaml",
+        "https://taskfile.dev/schema.json": "file:///home/zloeber/Zach-Projects/Personal/active/homelab-flux/.taskfiles/cluster.yml"
     },
     "editor.bracketPairColorization.enabled": true,
     "editor.guides.bracketPairs": true,

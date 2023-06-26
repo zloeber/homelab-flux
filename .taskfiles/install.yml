@@ -1,0 +1,303 @@
+---
+version: "3"
+
+vars:
+  LOCAL_BIN_PATH: ./venv/bin
+tasks:
+  all:
+    desc: Install all of the dependencies & tools
+    cmds:
+      - task: talosctl
+      - task: talhelper
+      #- task: go-task
+      - task: yq
+      - task: age
+      - task: sops
+      - task: kubestr
+      # - task: kubectl
+      - task: flux
+      - task: helm
+      - task: pre-commit
+      # - task: krew & plugins
+      # - task: dyff
+      # - task: kustomize
+      - task: cilium
+
+  age:
+    desc: Install age
+    vars:
+      APP_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: FiloSottile
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.APP_NAME}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/{{.APP_NAME}} --version | grep -oP '[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        mkdir -p {{.LOCAL_BIN_PATH}}
+        echo "{{.APP_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/{{.APP_NAME}}.tar.gz https://github.com/{{.OWNER}}/{{.APP_NAME}}/releases/download/v{{.RELEASE_VERSION}}/{{.APP_NAME}}-v{{.RELEASE_VERSION}}-linux-amd64.tar.gz
+        tar -xzf ${TEMP_DIR}/{{.APP_NAME}}.tar.gz --strip-components=1 -C {{.LOCAL_BIN_PATH}} age/{{.APP_NAME}} age/{{.APP_NAME}}-keygen
+        chmod +x {{.LOCAL_BIN_PATH}}/{{.APP_NAME}}
+        rm -rf $TEMP_DIR
+    status:
+      - '[ "{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    silent: true
+    ignore_errors: true
+
+  # go-task:
+  #   desc: Update go-task
+  #   vars:
+  #     RELEASE_VERSION:
+  #       sh: "wget -qO - \"https://api.github.com/repos/go-task/task/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+  #     CURRENT_VERSION:
+  #       sh: "task  --version | grep -oP 'v[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+  #   cmds:
+  #     - |
+  #       echo "Go-Task released: v{{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+  #       sudo dnf install -y https://github.com/go-task/task/releases/download/v{{.RELEASE_VERSION}}/task_linux_amd64.rpm
+  #   status:
+  #     - '[ "v{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+  #   silent: true
+  #   ignore_errors: true
+
+  sops:
+    desc: Install sops
+    vars:
+      APP_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: mozilla
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.APP_NAME}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/{{.APP_NAME}} --version | grep -oP '[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        mkdir -p {{.LOCAL_BIN_PATH}}
+        echo "{{.APP_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+        #https://github.com/mozilla/sops/releases/download/v3.7.3/sops-v3.7.3.linux.amd64
+        wget -qnv --show-progress -O {{.LOCAL_BIN_PATH}}/{{.APP_NAME}} https://github.com/{{.OWNER}}/{{.APP_NAME}}/releases/download/v{{.RELEASE_VERSION}}/{{.APP_NAME}}-v{{.RELEASE_VERSION}}.linux.amd64
+        chmod +x {{.LOCAL_BIN_PATH}}/{{.APP_NAME}}
+    status:
+      - '[ "{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    #silent: true
+    ignore_errors: true
+
+  talhelper:
+    desc: Install talhelper
+    vars:
+      TASK_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: budimanjojo
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.TASK_NAME}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} --version | grep -oP '[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/{{.TASK_NAME}}.tar.gz https://github.com/{{.OWNER}}/{{.TASK_NAME}}/releases/download/v{{.RELEASE_VERSION}}/talhelper_linux_amd64.tar.gz
+        tar -xzf ${TEMP_DIR}/{{.TASK_NAME}}.tar.gz --strip-components=0 -C {{.LOCAL_BIN_PATH}} {{.TASK_NAME}}
+        chmod +x {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}}
+        rm -rf $TEMP_DIR
+    status:
+      - '[ "{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    silent: true
+    ignore_errors: true
+
+  gitops:
+    desc: Install Weave gitops cli
+    vars:
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/weaveworks/weave-gitops/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")' || echo '0.0.0'"
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/gitops version | grep 'Tag:' | grep -oP 'v[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        echo "gitops released: v{{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: v{{.DESIRED_VERSION}}"
+        curl --silent --location "https://github.com/weaveworks/weave-gitops/releases/download/v0.24.0/gitops-$(uname)-$(uname -m).tar.gz" | tar xz -C /tmp
+        mv /tmp/gitops {{.LOCAL_BIN_PATH}}/gitops
+        chmod +x {{.LOCAL_BIN_PATH}}/gitops
+    status:
+      - '[ "v{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    silent: true
+    ignore_errors: true
+
+  ipcalc:
+    desc: Install ipcalc
+    cmds:
+      - |
+        curl --silent --location "https://jodies.de/ipcalc-archive/ipcalc-0.41.tar.gz" | tar xz -C /tmp
+        mv /tmp/ipcalc-0.41/ipcalc {{.LOCAL_BIN_PATH}}/ipcalc
+        chmod +x {{.LOCAL_BIN_PATH}}/ipcalc
+    status:
+      - test -f {{.LOCAL_BIN_PATH}}/ipcalc
+    silent: true
+    ignore_errors: true
+
+  talosctl:
+    desc: Install talosctl
+    vars:
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/siderolabs/talos/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/talosctl version --client | grep 'Tag:' | grep -oP 'v[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        echo "talosctl released: v{{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: v{{.DESIRED_VERSION}}"
+        wget -qnv --show-progress -O {{.LOCAL_BIN_PATH}}/talosctl https://github.com/siderolabs/talos/releases/download/v{{.DESIRED_VERSION}}/talosctl-linux-amd64
+        chmod +x {{.LOCAL_BIN_PATH}}/talosctl
+    status:
+      - '[ "v{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    silent: true
+    ignore_errors: true
+
+  yq:
+    desc: Install yq
+    vars:
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/mikefarah/yq/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/yq --version | grep -oP '[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+    cmds:
+      - |
+        echo "yq released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+        wget -qnv --show-progress -O {{.LOCAL_BIN_PATH}}/yq https://github.com/mikefarah/yq/releases/download/v{{.RELEASE_VERSION}}/yq_linux_amd64
+        chmod +x {{.LOCAL_BIN_PATH}}/yq
+    status:
+      - '[ "{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    silent: true
+    ignore_errors: true
+
+  kubestr:
+    desc: Install kubestr
+    silent: true
+    ignore_errors: true
+    vars:
+      TASK_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: kastenhq
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.TASK_NAME}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} version | grep -oP '[0-9]+.[0-9]+.[0-9]+' || echo 0.0.0"
+      FILENAME: "kubestr_{{.RELEASE_VERSION}}_Linux_amd64.tar.gz"
+    status:
+      - '[ "{{.RELEASE_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/{{.TASK_NAME}}.tar.gz https://github.com/{{.OWNER}}/{{.TASK_NAME}}/releases/download/v{{.RELEASE_VERSION}}/{{.FILENAME}}
+        tar -xzf ${TEMP_DIR}/{{.TASK_NAME}}.tar.gz --strip-components=0 -C {{.LOCAL_BIN_PATH}} {{.TASK_NAME}}
+        # chmod +x {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}}
+        rm -rf $TEMP_DIR
+
+  flux:
+    desc: Install flux
+    silent: true
+    ignore_errors: true
+    vars:
+      TASK_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: fluxcd
+      PROJECT: flux2 # '{{.PROJECT | default .TASK_NAME}}'
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.PROJECT}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: "{{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} -v | grep -oPm1 '[0-9]+.[0-9]+.[0-9]+(-.+)?$' || echo 0.0.0"
+      FILENAME: "{{.TASK_NAME}}_{{.DESIRED_VERSION}}_Linux_amd64.tar.gz"
+    status:
+      - '[ "{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: {{.DESIRED_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/{{.TASK_NAME}}.tar.gz https://github.com/{{.OWNER}}/{{.PROJECT}}/releases/download/v{{.DESIRED_VERSION}}/{{.FILENAME}}
+        tar -xzf ${TEMP_DIR}/{{.TASK_NAME}}.tar.gz --strip-components=0 -C {{.LOCAL_BIN_PATH}} {{.TASK_NAME}}
+        chmod +x {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}}
+        rm -rf $TEMP_DIR
+        {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} -v
+
+  helm:
+    desc: Install helm
+    silent: true
+    ignore_errors: true
+    vars:
+      TASK_NAME:
+        sh: "echo {{.TASK}} | awk -F: '{print $(NF)}'"
+      OWNER: helm
+      PROJECT: '{{.PROJECT | default .TASK_NAME}}'
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.PROJECT}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: '{{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} version | grep -oP -m1 "[0-9]+\.[0-9]+\.[0-9]+(-.+)?\s*" | head -1 || echo 0.0.0'
+      FILENAME: "{{.TASK_NAME}}-v{{.DESIRED_VERSION}}-linux-amd64.tar.gz"
+      STRIP_COMPONENTS: 1
+    status:
+      - '[ "{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: {{.DESIRED_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/{{.TASK_NAME}}.tar.gz https://get.helm.sh/{{.FILENAME}}
+        tar -xzf ${TEMP_DIR}/{{.TASK_NAME}}.tar.gz --strip-components={{.STRIP_COMPONENTS}} -C {{.LOCAL_BIN_PATH}} linux-amd64/{{.TASK_NAME}}
+        chmod +x {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}}
+        rm -rf $TEMP_DIR
+        {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} version
+
+  pre-commit:
+    desc: Install pre-commit
+    silent: true
+    ignore_errors: true
+    vars:
+      TASK_NAME:
+        sh: "echo '{{.TASK}}' | awk -F: '{print $(NF)}'"
+      OWNER: pre-commit
+      PROJECT: '{{.PROJECT | default .TASK_NAME}}'
+      RELEASE_VERSION:
+        sh: "wget -qO - \"https://api.github.com/repos/{{.OWNER}}/{{.PROJECT}}/releases/latest\" | grep -Po '\"tag_name\": \"v\\K.*?(?=\")'"
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: '{{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} -V | grep -oP -m1 "[0-9]+\.[0-9]+\.[0-9]+(-.+)?\s*" | head -1 || echo 0.0.0'
+    status:
+      - '[ "{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: {{.DESIRED_VERSION}}"
+        pip install pre-commit --upgrade
+        pre-commit autoupdate
+        pre-commit gc
+
+  cilium:
+    desc: Install ciliumcli
+    silent: true
+    ignore_errors: true
+    vars:
+      TASK_NAME:
+        sh: "echo {{.LOCAL_BIN_PATH}}/{{.TASK}} | awk -F: '{print $(NF)}'"
+      RELEASE_VERSION:
+        sh: 'curl -s https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt'
+      DESIRED_VERSION: '{{.DESIRED_VERSION | default .RELEASE_VERSION}}'
+      CURRENT_VERSION:
+        sh: 'echo -n "v" | cat - <({{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} version --client | grep "cli" | grep -oP -m1 "[0-9]+\.[0-9]+\.[0-9]+(-.+)?\s*" | head -1 ) || echo v0.0.0'
+      CLI_ARCH: amd64
+    status:
+      - '[ "{{.DESIRED_VERSION}}" = {{.CURRENT_VERSION}} ]'
+    cmds:
+      - |
+        echo "{{.TASK_NAME}} released: {{.RELEASE_VERSION}}, current: {{.CURRENT_VERSION}}, desired: {{.DESIRED_VERSION}}"
+        TEMP_DIR=$(mktemp -d)
+        wget -qnv --show-progress -O $TEMP_DIR/cilium-linux-{{.CLI_ARCH}}.tar.gz https://github.com/cilium/cilium-cli/releases/download/{{.DESIRED_VERSION}}/cilium-linux-{{.CLI_ARCH}}.tar.gz
+        wget -qnv --show-progress -O $TEMP_DIR/cilium-linux-{{.CLI_ARCH}}.tar.gz.sha256sum https://github.com/cilium/cilium-cli/releases/download/{{.DESIRED_VERSION}}/cilium-linux-{{.CLI_ARCH}}.tar.gz.sha256sum
+        (cd $TEMP_DIR && sha256sum --check cilium-linux-{{.CLI_ARCH}}.tar.gz.sha256sum)
+        tar xzvfC $TEMP_DIR/cilium-linux-{{.CLI_ARCH}}.tar.gz {{.LOCAL_BIN_PATH}}/
+        rm -rf $TEMP_DIR
+        {{.LOCAL_BIN_PATH}}/{{.TASK_NAME}} version

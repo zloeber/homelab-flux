@@ -2,37 +2,97 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: tf-controller
-  namespace: flux-system
+  name: vault-operator
+  namespace: vault
 spec:
+  interval: 30m
   chart:
     spec:
-      chart: tf-controller
+      chart: vault-operator
+      version: 1.19.0
       sourceRef:
         kind: HelmRepository
-        name: tf-controller
-      version: '>=0.15.0-rc.6'
-  interval: 1h0s
-  releaseName: tf-controller
-  targetNamespace: flux-system
+        name: banzaicloud
+        namespace: flux-system
+  maxHistory: 2
   install:
-    crds: Create
+    createNamespace: true
+    remediation:
+      retries: 3
   upgrade:
-    crds: CreateReplace
-  values:
-    replicaCount: 1
-    concurrency: 24
-    resources:
-      limits:
-        cpu: 1000m
-        memory: 2Gi
-      requests:
-        cpu: 400m
-        memory: 64Mi
-    caCertValidityDuration: 24h
-    certRotationCheckFrequency: 30m
-    image:
-      tag: v0.15.0-rc.6
-    runner:
-      image:
-        tag: v0.15.0-rc.6
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  dependsOn:
+    - name: local-path-provisioner
+      namespace: kube-system
+    # - name: ingress-nginx
+    #   namespace: networking
+  # values:
+  #   admin:
+  #     existingSecret: grafana-admin-secret
+  #   env:
+  #     GF_EXPLORE_ENABLED: true
+  #     GF_SERVER_ROOT_URL: "https://grafana.${SECRET_DOMAIN}"
+  #   grafana.ini:
+  #     analytics:
+  #       check_for_updates: false
+  #       check_for_plugin_updates: false
+  #   dashboardProviders:
+  #     dashboardproviders.yaml:
+  #       apiVersion: 1
+  #       providers:
+  #         - name: default
+  #           orgId: 1
+  #           folder: ""
+  #           type: file
+  #           disableDeletion: false
+  #           editable: true
+  #           options:
+  #             path: /var/lib/grafana/dashboards/default
+  #   datasources:
+  #     datasources.yaml:
+  #       apiVersion: 1
+  #       datasources:
+  #         - name: Prometheus
+  #           type: prometheus
+  #           access: proxy
+  #           url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+  #           isDefault: true
+  #   dashboards:
+  #     default:
+  #       cert-manager:
+  #         url: https://raw.githubusercontent.com/monitoring-mixins/website/master/assets/cert-manager/dashboards/cert-manager.json
+  #         datasource: Prometheus
+  #       flux-cluster:
+  #         url: https://raw.githubusercontent.com/fluxcd/flux2/main/manifests/monitoring/monitoring-config/dashboards/cluster.json
+  #         datasource: Prometheus
+  #       flux-control-plane:
+  #         url: https://raw.githubusercontent.com/fluxcd/flux2/main/manifests/monitoring/monitoring-config/dashboards/control-plane.json
+  #         datasource: Prometheus
+  #   sidecar:
+  #     dashboards:
+  #       enabled: true
+  #       searchNamespace: ALL
+  #     datasources:
+  #       enabled: true
+  #       searchNamespace: ALL
+  #   serviceMonitor:
+  #     enabled: true
+  #   ingress:
+  #     enabled: true
+  #     ingressClassName: nginx
+  #     annotations:
+  #       hajimari.io/icon: simple-icons:grafana
+  #     hosts:
+  #       - &host "grafana.${SECRET_DOMAIN}"
+  #     tls:
+  #       - hosts:
+  #           - *host
+  #   persistence:
+  #     enabled: true
+  #     storageClassName: local-path
+  #   testFramework:
+  #     enabled: false

@@ -5,6 +5,7 @@ namespace: flux-system
 resources:
   #- ./secret-sops-key.sops.yaml
   #- ./secret-tfe-cli-config.sops.yaml
+  - ./helmrepository.yaml
   - ./helmrelease.yaml
 commonLabels:
   app.kubernetes.io/name: tf-controller

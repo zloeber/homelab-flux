@@ -27,7 +27,8 @@ includes:
   format: .taskfiles/format.yml
   flux: .taskfiles/flux.yml
   cloudflared: .taskfiles/cloudflared.yml
-
+  vault: .taskfiles/vault.yml
+silent: true
 tasks:
   init:brew:
     desc: Initialize workstation dependencies with Brew

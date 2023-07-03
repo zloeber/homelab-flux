@@ -1,3 +1,5 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
 ---
 fail_fast: false
 repos:
@@ -8,3 +10,14 @@ repos:
           - --config-file
           - .yamllint.yaml
         id: yamllint
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.16.2
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: end-of-file-fixer

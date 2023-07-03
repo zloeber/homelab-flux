@@ -1,0 +1,27 @@
+
+---
+version: "3"
+
+tasks:
+  hsm:softhsm:init:
+    desc: Initialize the local softHSM for vault
+    quiet: true
+    vars:
+      TARGET_PATH: '~/.config/sops/age'
+      TARGET_FILE: "{{.TARGET_PATH}}/keys.txt"
+      TEMP_FILE:
+        sh: mktemp -u
+    cmds:
+      - |
+        echo "Initializing SoftHSM to be able to create a working example (only for dev),"
+        echo "sharing the HSM device is emulated with a pre-created keypair in the image."
+        #brew install softhsm
+        echo "HSM_PIN: ${HSM_PIN}"
+        softhsm2-util --init-token --free --label bank-vaults --so-pin banzai --pin banzai
+        #pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --keypairgen --key-type rsa:2048 --pin "${HSM_PIN}" --token-label bank-vaults --label bank-vaults
+    # preconditions:
+    #   - sh: "[ ! -f {{.TARGET_FILE}} ]"
+    #     msg: "Sops key already exists!"
+    #   - sh: test -f {{.SOPS_AGE_KEY_FILE}}
+    #     msg: |
+    #       Age key file is not found. Did you forget to create it?

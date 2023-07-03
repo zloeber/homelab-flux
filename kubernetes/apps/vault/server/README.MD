@@ -1,0 +1,1 @@
+We setup Vault using the vault-banks operator.

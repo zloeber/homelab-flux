@@ -4,20 +4,20 @@ version: "3"
 vars:
   CURRENT_NAMESPACE:
     sh: "kubectl config get-contexts | grep '^*' | awk '{print $5}'"
+  SOURCE_GIT_REPO: home-kubernetes
 
 tasks:
   sync:
     desc: Sync flux-system with the Git Repository
     cmds:
-      - flux -n flux-system reconcile source git flux-system
-      - flux -n flux-system reconcile kustomization crds
-      - flux -n flux-system reconcile kustomization core
-      - flux -n flux-system reconcile kustomization apps
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile source git {{.SOURCE_GIT_REPO}}
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile kustomization cluster
+      - flux -n flux-system --kubeconfig ./kubeconfig reconcile kustomization cluster-apps
     silent: true
 
   suspend:
     cmds:
-      - flux -n flux-system suspend source git flux-system
+      - flux -n flux-system suspend source git {{.SOURCE_GIT_REPO}}
       - flux -n flux-system suspend kustomization crds
       - flux -n flux-system suspend kustomization core
       - flux -n flux-system suspend kustomization apps
@@ -25,7 +25,7 @@ tasks:
 
   resume:
     cmds:
-      - flux -n flux-system resume source git flux-system
+      - flux -n flux-system resume source git {{.SOURCE_GIT_REPO}}
       - flux -n flux-system resume kustomization crds
       - flux -n flux-system resume kustomization core
       - flux -n flux-system resume kustomization apps

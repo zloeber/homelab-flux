@@ -17,8 +17,12 @@ spec:
   targetNamespace: flux-system
   install:
     crds: Create
+    #createNamespace: true
+    remediation:
+      retries: 3
   upgrade:
     crds: CreateReplace
+
   values:
     replicaCount: 1
     concurrency: 24

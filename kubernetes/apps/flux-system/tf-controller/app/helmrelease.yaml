@@ -10,7 +10,7 @@ spec:
       chart: tf-controller
       sourceRef:
         kind: HelmRepository
-        name: tf-controller
+        name: weave-gitops
       version: '>=0.15.0-rc.6'
   interval: 1h0s
   releaseName: tf-controller

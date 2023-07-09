@@ -3,6 +3,7 @@ kind: HelmRelease
 metadata:
   name: home-assistant
   namespace: household
+
 spec:
   interval: 5m
   chart:
@@ -14,9 +15,8 @@ spec:
         kind: HelmRepository
         name: k8s-at-home
         namespace: flux-system
-      interval: 5m
   install:
-    createNamespace: true
+    createNamespace: false
     remediation:
       retries: 3
   upgrade:
@@ -75,14 +75,14 @@ spec:
           hajimari.io/icon: "home-automation"
           hajimari.io/group: "Home"
     metrics:
-      enabled: true
+      enabled: false
       serviceMonitor:
         bearerTokenSecret:
           name: prometheus-token
           key: token
 
     prometheusRule:
-      enabled: true
+      enabled: false
       labels: {}
       # -- Configure additionial rules for the chart under this key.
       # @default -- See prometheusrules.yaml

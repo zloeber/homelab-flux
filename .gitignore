@@ -12,4 +12,4 @@ kubeconfig
 # Ansible
 xanmanning.k3s*
 venv
-./tmp
+tmp

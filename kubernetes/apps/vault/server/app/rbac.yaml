@@ -1,14 +1,16 @@
+---
 kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: vault
+  namespace: vault
 
 ---
-
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: vault
+  namespace: vault
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -18,21 +20,21 @@ rules:
     verbs: ["get", "update", "patch"]
 
 ---
-
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: vault
+  namespace: vault
 roleRef:
   kind: Role
   name: vault
+  namespace: vault
   apiGroup: rbac.authorization.k8s.io
 subjects:
   - kind: ServiceAccount
     name: vault
 
 ---
-
 # This binding allows the deployed Vault instance to authenticate clients
 # through Kubernetes ServiceAccounts (if configured so).
 apiVersion: rbac.authorization.k8s.io/v1

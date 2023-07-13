@@ -52,8 +52,8 @@ spec:
         enabled: false
         mountPath: /config/backups
         type: nfs
-        server: "${PRIMARY_NFS_SERVER}"
-        path: "${NFS_KUBERNETES_PATH}/backups/homeassistant"
+        server: ""
+        path: "/backups/homeassistant"
 
     resources:
       requests:

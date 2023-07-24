@@ -5,13 +5,14 @@ metadata:
   name: cluster-apps-vault
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cluster-apps-vault-operator
   path: ./kubernetes/apps/vault/server/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-    namespace: flux-system
-  wait: true # no flux ks dependents
+  wait: false # no flux ks dependents
   interval: 30m
   retryInterval: 1m
   timeout: 5m

@@ -17,7 +17,7 @@ spec:
   vaultAnnotations:
     type/instance: "vault"
 
-  # Vault Configurer Pods and Services annotations
+  # Vault Configure Pods and Services annotations
   vaultConfigurerAnnotations:
     type/instance: "vaultconfigurer"
 
@@ -72,11 +72,28 @@ spec:
     # Specify Ingress object annotations here, if TLS is enabled (which is by default)
     # the operator will add NGINX, Traefik and HAProxy Ingress compatible annotations
     # to support TLS backends
-    annotations: {}
+    annotations:
+      external-dns.alpha.kubernetes.io/target: ingress.loeber.live
+      hajimari.io/icon: video-input-antenna
     # Override the default Ingress specification here
     # This follows the same format as the standard Kubernetes Ingress
     # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#ingressspec-v1beta1-extensions
-    spec: {}
+    spec:
+      ingressClassName: nginx
+      tls:
+        - host: &host "vault.${SECRET_DOMAIN}"
+      rules:
+        - host: *host
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: vault
+                    port:
+                      number: 8200
+
 
   # Use local disk to store Vault file data, see config section.
   volumes:
@@ -91,7 +108,7 @@ spec:
   # Support for distributing the generated CA certificate Secret to other namespaces.
   # Define a list of namespaces or use ["*"] for all namespaces.
   caNamespaces:
-    - "vswh"
+    - "*"
 
   # Describe where you would like to store the Vault unseal keys and root token.
   unsealConfig:

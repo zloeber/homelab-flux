@@ -110,7 +110,7 @@ spec:
   config:
     storage:
       file:
-        path: "${ .Env.VAULT_STORAGE_FILE }" # An example how Vault config environment interpolation can be used
+        path: "${VAULT_STORAGE_FILE}" # An example how Vault config environment interpolation can be used
     listener:
       tcp:
         address: "0.0.0.0:8200"
@@ -194,25 +194,25 @@ spec:
 
     # Allows writing some secrets to Vault (useful for development purposes).
     # See https://www.vaultproject.io/docs/secrets/kv/index.html for more information.
-    startupSecrets:
-      - type: kv
-        path: secret/data/accounts/aws
-        data:
-          data:
-            AWS_ACCESS_KEY_ID: secretId
-            AWS_SECRET_ACCESS_KEY: s3cr3t
-      - type: kv
-        path: secret/data/dockerrepo
-        data:
-          data:
-            DOCKER_REPO_USER: dockerrepouser
-            DOCKER_REPO_PASSWORD: dockerrepopassword
-      - type: kv
-        path: secret/data/mysql
-        data:
-          data:
-            MYSQL_ROOT_PASSWORD: s3cr3t
-            MYSQL_PASSWORD: 3xtr3ms3cr3t
+    # startupSecrets:
+    #   - type: kv
+    #     path: secret/data/accounts/aws
+    #     data:
+    #       data:
+    #         AWS_ACCESS_KEY_ID: secretId
+    #         AWS_SECRET_ACCESS_KEY: s3cr3t
+    #   - type: kv
+    #     path: secret/data/dockerrepo
+    #     data:
+    #       data:
+    #         DOCKER_REPO_USER: dockerrepouser
+    #         DOCKER_REPO_PASSWORD: dockerrepopassword
+    #   - type: kv
+    #     path: secret/data/mysql
+    #     data:
+    #       data:
+    #         MYSQL_ROOT_PASSWORD: s3cr3t
+    #         MYSQL_PASSWORD: 3xtr3ms3cr3t
 
   vaultEnvsConfig:
     - name: VAULT_LOG_LEVEL

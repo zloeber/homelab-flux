@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault
+  namespace: vault
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "ingress.${SECRET_DOMAIN}"
+    hajimari.io/icon: video-input-antenna
+spec:
+  ingressClassName: nginx
+  tls:
+    - host: &host "vault.${SECRET_DOMAIN}"
+  rules:
+    - host: *host
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vault"
+                port:
+                  number: 8200

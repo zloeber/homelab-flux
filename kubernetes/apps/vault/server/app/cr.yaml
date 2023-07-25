@@ -267,7 +267,7 @@ metadata:
   namespace: vault
 spec:
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#class-1
-  # storageClassName: ""
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:

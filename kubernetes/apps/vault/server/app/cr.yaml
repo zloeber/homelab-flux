@@ -77,11 +77,11 @@ spec:
       hajimari.io/icon: video-input-antenna
     # Override the default Ingress specification here
     # This follows the same format as the standard Kubernetes Ingress
-    # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#ingressspec-v1beta1-extensions
     spec:
       ingressClassName: nginx
       tls:
-        - host: &host "vault.${SECRET_DOMAIN}"
+        - hosts:
+            - &host "vault.${SECRET_DOMAIN}"
       rules:
         - host: *host
           http:
@@ -93,7 +93,6 @@ spec:
                     name: vault
                     port:
                       number: 8200
-
 
   # Use local disk to store Vault file data, see config section.
   volumes:

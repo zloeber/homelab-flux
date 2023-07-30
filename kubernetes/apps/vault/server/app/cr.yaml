@@ -93,7 +93,7 @@ spec:
               connection_url: "{{username}}:{{password}}@tcp(mysql:3306)/"
               allowed_roles: ['*']
               username: root
-              password: '${ file `/db-password/pw` }'
+              password: '$${ file `/db-password/pw` }'
           roles:
             - name: app
               db_name: mysql

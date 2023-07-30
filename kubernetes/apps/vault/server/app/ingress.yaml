@@ -5,7 +5,7 @@ metadata:
   namespace: vault
   annotations:
     external-dns.alpha.kubernetes.io/target: "ingress.${SECRET_DOMAIN}"
-    hajimari.io/icon: video-input-antenna
+    hajimari.io/icon: mdi:safe-square
 spec:
   ingressClassName: nginx
   tls:

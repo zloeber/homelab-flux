@@ -83,23 +83,6 @@ spec:
         description: General secrets.
         options:
           version: 2
-      - type: database
-        description: mysql
-        configuration:
-          config:
-            - name: mysql
-              plugin_name: mysql-database-plugin
-              max_open_connections: 5
-              connection_url: "{{username}}:{{password}}@tcp(mysql:3306)/"
-              allowed_roles: ['*']
-              username: root
-              password: '${VAULT_DB_MYSQL_PASSWORD}'
-          roles:
-            - name: app
-              db_name: mysql
-              creation_statements: "CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT ALL ON `app\_%`.* TO '{{name}}'@'%';"
-              default_ttl: 2m
-              max_ttl: 10m
 
   credentialsConfig:
     path: /db-password/pw

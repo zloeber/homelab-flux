@@ -13,3 +13,4 @@ data:
   CLUSTER_CIDR: "10.42.0.0/16"
   SERVICE_CIDR: "10.43.0.0/16"
   VAULT_STORAGE_FILE: /vault/file
+  VAULT_DB_MYSQL_PASSWORD: '${ file `/db-password/pw` }'

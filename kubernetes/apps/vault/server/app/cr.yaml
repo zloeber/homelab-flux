@@ -84,9 +84,9 @@ spec:
         options:
           version: 2
 
-  credentialsConfig:
-    path: /db-password/pw
-    secretName: db-password
+  # credentialsConfig:
+  #   path: /db-password/pw
+  #   secretName: db-password
 
   # Marks presence of Istio, which influences things like port namings
   istioEnabled: false

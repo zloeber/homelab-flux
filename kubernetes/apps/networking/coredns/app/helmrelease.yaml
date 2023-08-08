@@ -1,0 +1,85 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: coredns
+  namespace: networking
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://coredns.github.io/helm
+      chart: coredns
+      version: 1.24.3
+      sourceRef:
+        kind: HelmRepository
+        name: coredns-charts
+        namespace: flux-system
+      interval: 5m
+  values:
+    replicaCount: 3
+    serviceType: LoadBalancer
+    prometheus:
+      service:
+        enabled: true
+      monitor:
+        enabled: true
+    service:
+      externalTrafficPolicy: Local
+      loadBalancerIP: ${COREDNS_ADDR}
+      annotations:
+        metallb.universe.tf/allow-shared-ip: coredns
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - coredns
+            topologyKey: "kubernetes.io/hostname"
+      tolerations:
+        - key: "arm"
+          operator: "Exists"
+    rbac:
+      create: true
+    isClusterService: false
+    servers:
+      - zones:
+          - zone: ${SECRET_DOMAIN}.
+            scheme: dns://
+            use_tcp: false
+        port: 53
+        plugins:
+          - name: errors
+          - name: health
+            configBlock: |-
+              lameduck 5s
+          - name: ready
+        # - name: kubernetes
+        #   parameters: cluster.local in-addr.arpa ip6.arpa
+        #   configBlock: |-
+        #     pods insecure
+        #     fallthrough in-addr.arpa ip6.arpa
+        #     ttl 30
+          - name: prometheus
+            parameters: 0.0.0.0:9153
+          - name: forward
+            parameters: . /etc/resolv.conf
+          - name: cache
+            parameters: 30
+          - name: loop
+          - name: reload
+          - name: loadbalance
+          - name: file
+            parameters: /etc/coredns/${SECRET_DOMAIN}
+    zoneFiles:
+      - filename: ${SECRET_DOMAIN}
+        domain: ${SECRET_DOMAIN}
+        contents: |
+          ${SECRET_DOMAIN}.   IN SOA etta.ns.cloudflare.com. dns.cloudflare.com. 2020100600 10000 2400 604800 3600
+          mc.${SECRET_DOMAIN}. IN A   ${METALLB_K8S_GATEWAY_ADDR}
+          *.t.${SECRET_DOMAIN}. IN A 100.108.157.55
+          *.${SECRET_DOMAIN}. IN A ${METALLB_K8S_GATEWAY_ADDR}
+          ${SECRET_DOMAIN}. IN A   ${METALLB_K8S_GATEWAY_ADDR}

@@ -29,6 +29,7 @@ main() {
         verify_master_count
         verify_ansible_hosts
         verify_metallb
+        verify_corends
         verify_kubevip
         verify_cluster_service_cidrs
         verify_addressing
@@ -143,6 +144,7 @@ verify_addressing() {
     local found_kube_vip="false"
     local found_k8s_gateway="false"
     local found_ingress="false"
+    local found_coredns="false"
     # Verify the metallb min and metallb ceiling are in the same network
     metallb_subnet_min=$(echo "${BOOTSTRAP_METALLB_LB_RANGE}" | cut -d- -f1 | cut -d. -f1,2,3)
     metallb_subnet_ceil=$(echo "${BOOTSTRAP_METALLB_LB_RANGE}" | cut -d- -f2 | cut -d. -f1,2,3)
@@ -178,6 +180,9 @@ verify_addressing() {
         if [[ "${addr}" == "${BOOTSTRAP_METALLB_INGRESS_ADDR}" ]]; then
             found_ingress="true"
         fi
+        if [[ "${addr}" == "${BOOTSTRAP_COREDNS_ADDR}" ]]; then
+            found_coredns="true"
+        fi
         for var in "${!BOOTSTRAP_ANSIBLE_HOST_ADDR_@}"; do
             if [[ "${!var}" == "${addr}" ]]; then
                 _log "ERROR(${FUNCNAME[0]})" "The IP for node '${!var}' should NOT be in the provided metallb range '${BOOTSTRAP_METALLB_LB_RANGE}'"
@@ -195,6 +200,10 @@ verify_addressing() {
     fi
     if [[ "${found_ingress}" == "false" ]]; then
         _log "ERROR(${FUNCNAME[0]})" "The IP for ingress '${BOOTSTRAP_METALLB_INGRESS_ADDR}' should be in the provided metallb range '${BOOTSTRAP_METALLB_LB_RANGE}'"
+        exit 1
+    fi
+    if [[ "${found_coredns}" == "false" ]]; then
+        _log "ERROR(${FUNCNAME[0]})" "The IP for coredns '${BOOTSTRAP_COREDNS_ADDR}' should be in the provided metallb range '${BOOTSTRAP_METALLB_LB_RANGE}'"
         exit 1
     fi
 }
@@ -254,6 +263,11 @@ verify_metallb() {
     _has_valid_ip "${BOOTSTRAP_METALLB_K8S_GATEWAY_ADDR}" "BOOTSTRAP_METALLB_K8S_GATEWAY_ADDR"
     _has_valid_ip "${BOOTSTRAP_METALLB_INGRESS_ADDR}" "BOOTSTRAP_METALLB_INGRESS_ADDR"
 }
+
+verify_cluster_coredns() {
+    _has_envar "BOOTSTRAP_COREDNS_ADDR"
+}
+
 
 verify_cluster_service_cidrs() {
     #TODO: Validate input is a CIDR range
